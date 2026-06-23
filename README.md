@@ -18,7 +18,7 @@ through MCP plus a memory rule. It is memory-only — it does not route your mod
 
 ```bash
 claude plugin marketplace add smartify-inc/smartify-claude
-claude plugin install --scope user smartify
+claude plugin install smartify@smartify
 ```
 
 When you enable the plugin, Claude Code prompts for three values:

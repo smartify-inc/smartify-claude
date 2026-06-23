@@ -9,7 +9,7 @@ afterward.
 
 ```bash
 claude plugin marketplace add smartify-inc/smartify-claude
-claude plugin install --scope user smartify
+claude plugin install smartify@smartify
 ```
 
 When you enable the plugin, Claude Code prompts for:
