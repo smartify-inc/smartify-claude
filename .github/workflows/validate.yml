@@ -20,7 +20,8 @@ jobs:
           for f in \
             .claude-plugin/plugin.json \
             .claude-plugin/marketplace.json \
-            .claude-plugin/.mcp.json; do
+            .claude-plugin/.mcp.json \
+            .claude-plugin/hooks/hooks.json; do
             echo "Parsing $f"
             jq empty "$f"
           done
@@ -34,6 +35,12 @@ jobs:
             .claude-plugin/.mcp.json
             .claude-plugin/README.md
             .claude-plugin/skills/smartify/SKILL.md
+            .claude-plugin/hooks/hooks.json
+            .claude-plugin/hooks/smartify-session-start.sh
+            .claude-plugin/hooks/smartify-stop.sh
+            .claude-plugin/hooks/smartify-precompact.sh
+            .claude-plugin/commands/init.md
+            .claude-plugin/commands/status.md
           )
           fail=0
           for f in "${required[@]}"; do
@@ -43,6 +50,30 @@ jobs:
             fi
           done
           exit $fail
+
+      - name: Verify hook scripts are valid bash and executable
+        run: |
+          set -euo pipefail
+          fail=0
+          for s in .claude-plugin/hooks/*.sh; do
+            echo "Checking $s"
+            bash -n "$s" || { echo "::error file=$s::bash syntax error"; fail=1; }
+            if [[ ! -x "$s" ]]; then
+              echo "::error file=$s::hook script is not executable (chmod +x)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Verify hooks.json declares the three memory hooks
+        run: |
+          set -euo pipefail
+          for event in SessionStart Stop PreCompact; do
+            if ! jq -e --arg e "$event" '.hooks[$e]' .claude-plugin/hooks/hooks.json >/dev/null; then
+              echo "::error file=.claude-plugin/hooks/hooks.json::missing $event hook"
+              exit 1
+            fi
+          done
 
       - name: Verify version sync (plugin.json vs marketplace.json)
         run: |

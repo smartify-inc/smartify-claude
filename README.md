@@ -48,24 +48,56 @@ claude --plugin-dir /path/to/smartify-claude/.claude-plugin
 ├── marketplace.json   # smartify-inc/smartify-claude catalog entry
 ├── .mcp.json          # remote HTTP MCP server "smartify" → /v1/mcp/{hivemind_id}
 ├── README.md          # plugin-focused install notes
-└── skills/
-    └── smartify/
-        └── SKILL.md   # memory protocol: search before answering, file after
+├── skills/
+│   └── smartify/
+│       └── SKILL.md   # memory protocol: search before answering, file after
+├── commands/
+│   ├── init.md        # /smartify:init — verify + onboard
+│   └── status.md      # /smartify:status — memory overview
+└── hooks/
+    ├── hooks.json     # registers SessionStart / Stop / PreCompact
+    ├── smartify-session-start.sh
+    ├── smartify-stop.sh
+    └── smartify-precompact.sh
 ```
 
 The MCP server is named `smartify`; its tools keep their `hivemind_*` names (the Smartify
 gateway API surface), so Claude calls `hivemind_status`, `hivemind_search`,
 `hivemind_smart_file_response`, and so on.
 
+## Slash commands
+
+| Command | What it does |
+| --- | --- |
+| `/smartify:init` | Verifies the connection, runs `hivemind_status`, explains the memory protocol, and reports anything left to fix. |
+| `/smartify:status` | Shows your memory overview — drawer count, wings, and rooms. |
+
+## Hooks (automatic memory)
+
+The skill tells Claude what to do; the hooks make it reliable without you having to ask.
+
+| Hook | Behavior |
+| --- | --- |
+| `SessionStart` | Injects a stable `session_id` and the memory protocol into context, so every exchange in the chat is filed under one session and search/file happen consistently. |
+| `Stop` | A backstop that reminds Claude to file the exchange via `hivemind_smart_file_response` before the turn ends. Fires at most once per turn (guarded by `stop_hook_active`) and uses non-error "Stop hook feedback". |
+| `PreCompact` | Before the conversation is compacted, prompts Claude once per session to persist durable context (decisions, architecture notes) via `hivemind_add_drawer` so it survives the summary. |
+
+The hooks are dependency-free shell scripts. They use `jq` when present for robust JSON
+parsing and fall back to `grep`/`sed` otherwise. No API key is ever read or printed by a
+hook — they only inject reminders; the actual memory calls go through the `smartify` MCP
+server using your configured credentials.
+
 ## Verifying your setup
 
 After enabling the plugin and running `/reload-plugins`:
 
-1. Confirm the `smartify` MCP server appears in the plugin inventory:
+1. Run `/smartify:init` — it verifies the connection, runs `hivemind_status`, and reports
+   anything left to fix.
+2. Confirm the `smartify` MCP server appears in the plugin inventory:
    `claude plugin details smartify` (or the `/plugin` detail view).
-2. Ask Claude to check memory — it should call `hivemind_status` and report a drawer count.
 3. Ask about prior work — it should call `hivemind_search` before answering.
-4. Finish a turn — it should call `hivemind_smart_file_response` to file the exchange.
+4. Finish a turn — it should call `hivemind_smart_file_response` to file the exchange (the
+   `Stop` hook reminds it if needed).
 
 You can sanity-check credentials independently of Claude Code with the smoke script:
 
@@ -78,6 +110,7 @@ tenant scoping.
 
 ## Scope
 
-Phase 1 is memory-only. Auto-save hooks, slash commands (`/smartify:init`,
-`/smartify:status`), a Connect-page install tile, and gateway model routing are planned for
-later phases.
+The plugin covers memory: a remote MCP server, a memory-protocol skill, automatic-memory
+hooks (`SessionStart` / `Stop` / `PreCompact`), and the `/smartify:init` and
+`/smartify:status` slash commands. A Connect-page install tile and gateway model routing
+(Anthropic `/v1/messages`) are planned for later.

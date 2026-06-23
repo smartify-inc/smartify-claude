@@ -1,0 +1,35 @@
+{
+  "description": "Smartify memory hooks — inject a stable session id at session start, remind Claude to file each exchange before it stops, and preserve durable context before compaction.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/smartify-session-start.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/smartify-stop.sh\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/smartify-precompact.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

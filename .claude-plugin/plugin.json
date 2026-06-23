@@ -1,7 +1,7 @@
 {
   "name": "smartify",
   "displayName": "Smartify",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Smartify persistent memory for Claude Code — connects to your Hivemind over MCP so Claude searches shared memory before answering and files each exchange after.",
   "author": {
     "name": "Smartify",

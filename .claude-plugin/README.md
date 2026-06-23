@@ -1,8 +1,9 @@
 # Smartify — Claude Code plugin
 
 Gives Claude Code persistent, shared memory backed by your Smartify Hivemind. The plugin
-bundles a remote MCP server (`smartify`) and a memory-protocol skill so Claude searches
-your memory before answering and files each exchange afterward.
+bundles a remote MCP server (`smartify`), a memory-protocol skill, automatic-memory hooks,
+and slash commands so Claude searches your memory before answering and files each exchange
+afterward.
 
 ## Install
 
@@ -27,8 +28,16 @@ The API key is marked sensitive, so it is stored in your OS keychain — never w
 The `smartify` MCP server starts automatically when the plugin is enabled. If you change
 the configuration, run `/reload-plugins` (or restart Claude Code) to pick up MCP changes.
 
-Verify it is working by asking Claude to check memory — it should call `hivemind_status`
-and report your stored drawer count.
+Verify it is working by running `/smartify:init`, or ask Claude to check memory — it should
+call `hivemind_status` and report your stored drawer count.
+
+## Commands and hooks
+
+- `/smartify:init` — verify the connection and onboard.
+- `/smartify:status` — show your memory overview (drawers, wings, rooms).
+- Hooks: `SessionStart` injects a stable session id + protocol, `Stop` reminds Claude to
+  file each exchange, and `PreCompact` preserves durable context before compaction. They are
+  dependency-free shell scripts and never read or print your API key.
 
 See the [repository README](https://github.com/smartify-inc/smartify-claude) for full
 setup and troubleshooting.
