@@ -1,0 +1,41 @@
+{
+  "name": "smartify",
+  "displayName": "Smartify",
+  "version": "0.1.0",
+  "description": "Smartify persistent memory for Claude Code — connects to your Hivemind over MCP so Claude searches shared memory before answering and files each exchange after.",
+  "author": {
+    "name": "Smartify",
+    "url": "https://smartify.ai"
+  },
+  "homepage": "https://smartify.ai",
+  "repository": "https://github.com/smartify-inc/smartify-claude",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "mcp",
+    "smartify",
+    "hivemind",
+    "ai"
+  ],
+  "userConfig": {
+    "hivemind_id": {
+      "type": "string",
+      "title": "Hivemind ID",
+      "description": "Your Hivemind id (starts with hm_). Copy it from the Smartify dashboard on the Connect or API keys page.",
+      "required": true
+    },
+    "api_key": {
+      "type": "string",
+      "title": "API key",
+      "description": "A Smartify SDK key scoped to this Hivemind (sk_live_… or sk_test_…). Mint one in the dashboard under Settings → API keys.",
+      "sensitive": true,
+      "required": true
+    },
+    "api_base": {
+      "type": "string",
+      "title": "API base URL",
+      "description": "Smartify gateway base URL, including the /v1 suffix. Only change this for self-hosted or staging environments.",
+      "default": "https://api.hivemind.smartify.ai/v1"
+    }
+  }
+}

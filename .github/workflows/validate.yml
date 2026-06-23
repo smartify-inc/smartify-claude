@@ -1,0 +1,81 @@
+name: Validate plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - '.claude-plugin/**'
+      - '.github/workflows/validate.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse JSON manifests
+        run: |
+          set -euo pipefail
+          for f in \
+            .claude-plugin/plugin.json \
+            .claude-plugin/marketplace.json \
+            .claude-plugin/.mcp.json; do
+            echo "Parsing $f"
+            jq empty "$f"
+          done
+
+      - name: Verify required files exist
+        run: |
+          set -euo pipefail
+          required=(
+            .claude-plugin/plugin.json
+            .claude-plugin/marketplace.json
+            .claude-plugin/.mcp.json
+            .claude-plugin/README.md
+            .claude-plugin/skills/smartify/SKILL.md
+          )
+          fail=0
+          for f in "${required[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error file=$f::required file is missing"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Verify version sync (plugin.json vs marketplace.json)
+        run: |
+          set -euo pipefail
+          plugin_version=$(jq -r '.version' .claude-plugin/plugin.json)
+          marketplace_version=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+          echo "plugin.json version:      $plugin_version"
+          echo "marketplace.json version: $marketplace_version"
+          if [[ "$plugin_version" != "$marketplace_version" ]]; then
+            echo "::error::version mismatch — plugin.json ($plugin_version) != marketplace.json ($marketplace_version)"
+            exit 1
+          fi
+
+      - name: Verify plugin name sync
+        run: |
+          set -euo pipefail
+          plugin_name=$(jq -r '.name' .claude-plugin/plugin.json)
+          marketplace_plugin_name=$(jq -r '.plugins[0].name' .claude-plugin/marketplace.json)
+          if [[ "$plugin_name" != "$marketplace_plugin_name" ]]; then
+            echo "::error::plugin name mismatch — plugin.json ($plugin_name) != marketplace.json ($marketplace_plugin_name)"
+            exit 1
+          fi
+
+      - name: Verify MCP server key
+        run: |
+          set -euo pipefail
+          if ! jq -e '.mcpServers.smartify.type == "http"' .claude-plugin/.mcp.json >/dev/null; then
+            echo "::error file=.claude-plugin/.mcp.json::expected mcpServers.smartify.type == \"http\""
+            exit 1
+          fi
+
+      - name: Verify SKILL.md frontmatter has a name
+        run: |
+          set -euo pipefail
+          head -n 1 .claude-plugin/skills/smartify/SKILL.md | grep -qx -- '---'
+          grep -qE '^name:[[:space:]]*smartify[[:space:]]*$' .claude-plugin/skills/smartify/SKILL.md

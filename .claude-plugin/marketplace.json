@@ -1,0 +1,21 @@
+{
+  "name": "smartify",
+  "owner": {
+    "name": "smartify-inc",
+    "url": "https://github.com/smartify-inc"
+  },
+  "metadata": {
+    "description": "Smartify plugins for Claude Code — persistent, shared memory backed by your Hivemind."
+  },
+  "plugins": [
+    {
+      "name": "smartify",
+      "source": "./.claude-plugin",
+      "description": "Smartify persistent memory for Claude Code — connects to your Hivemind over MCP so Claude searches shared memory before answering and files each exchange after.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Smartify"
+      }
+    }
+  ]
+}
