@@ -6,6 +6,10 @@ on:
   pull_request:
     paths:
       - '.claude-plugin/**'
+      - '.mcp.json'
+      - 'skills/**'
+      - 'commands/**'
+      - 'hooks/**'
       - '.github/workflows/validate.yml'
 
 jobs:
@@ -20,8 +24,8 @@ jobs:
           for f in \
             .claude-plugin/plugin.json \
             .claude-plugin/marketplace.json \
-            .claude-plugin/.mcp.json \
-            .claude-plugin/hooks/hooks.json; do
+            .mcp.json \
+            hooks/hooks.json; do
             echo "Parsing $f"
             jq empty "$f"
           done
@@ -32,15 +36,15 @@ jobs:
           required=(
             .claude-plugin/plugin.json
             .claude-plugin/marketplace.json
-            .claude-plugin/.mcp.json
             .claude-plugin/README.md
-            .claude-plugin/skills/smartify/SKILL.md
-            .claude-plugin/hooks/hooks.json
-            .claude-plugin/hooks/smartify-session-start.sh
-            .claude-plugin/hooks/smartify-stop.sh
-            .claude-plugin/hooks/smartify-precompact.sh
-            .claude-plugin/commands/init.md
-            .claude-plugin/commands/status.md
+            .mcp.json
+            skills/smartify/SKILL.md
+            hooks/hooks.json
+            hooks/smartify-session-start.sh
+            hooks/smartify-stop.sh
+            hooks/smartify-precompact.sh
+            commands/init.md
+            commands/status.md
           )
           fail=0
           for f in "${required[@]}"; do
@@ -51,11 +55,36 @@ jobs:
           done
           exit $fail
 
+      - name: Verify components are NOT nested inside .claude-plugin/
+        run: |
+          set -euo pipefail
+          fail=0
+          for d in skills commands hooks; do
+            if [[ -e ".claude-plugin/$d" ]]; then
+              echo "::error::.claude-plugin/$d must live at the plugin root, not inside .claude-plugin/"
+              fail=1
+            fi
+          done
+          if [[ -e ".claude-plugin/.mcp.json" ]]; then
+            echo "::error::.mcp.json must live at the plugin root, not inside .claude-plugin/"
+            fail=1
+          fi
+          exit $fail
+
+      - name: Verify marketplace source points at the plugin root
+        run: |
+          set -euo pipefail
+          src=$(jq -r '.plugins[0].source' .claude-plugin/marketplace.json)
+          if [[ "$src" != "./" ]]; then
+            echo "::error file=.claude-plugin/marketplace.json::plugins[0].source must be \"./\" (repo root), got \"$src\""
+            exit 1
+          fi
+
       - name: Verify hook scripts are valid bash and executable
         run: |
           set -euo pipefail
           fail=0
-          for s in .claude-plugin/hooks/*.sh; do
+          for s in hooks/*.sh; do
             echo "Checking $s"
             bash -n "$s" || { echo "::error file=$s::bash syntax error"; fail=1; }
             if [[ ! -x "$s" ]]; then
@@ -69,8 +98,8 @@ jobs:
         run: |
           set -euo pipefail
           for event in SessionStart Stop PreCompact; do
-            if ! jq -e --arg e "$event" '.hooks[$e]' .claude-plugin/hooks/hooks.json >/dev/null; then
-              echo "::error file=.claude-plugin/hooks/hooks.json::missing $event hook"
+            if ! jq -e --arg e "$event" '.hooks[$e]' hooks/hooks.json >/dev/null; then
+              echo "::error file=hooks/hooks.json::missing $event hook"
               exit 1
             fi
           done
@@ -100,13 +129,13 @@ jobs:
       - name: Verify MCP server key
         run: |
           set -euo pipefail
-          if ! jq -e '.mcpServers.smartify.type == "http"' .claude-plugin/.mcp.json >/dev/null; then
-            echo "::error file=.claude-plugin/.mcp.json::expected mcpServers.smartify.type == \"http\""
+          if ! jq -e '.mcpServers.smartify.type == "http"' .mcp.json >/dev/null; then
+            echo "::error file=.mcp.json::expected mcpServers.smartify.type == \"http\""
             exit 1
           fi
 
       - name: Verify SKILL.md frontmatter has a name
         run: |
           set -euo pipefail
-          head -n 1 .claude-plugin/skills/smartify/SKILL.md | grep -qx -- '---'
-          grep -qE '^name:[[:space:]]*smartify[[:space:]]*$' .claude-plugin/skills/smartify/SKILL.md
+          head -n 1 skills/smartify/SKILL.md | grep -qx -- '---'
+          grep -qE '^name:[[:space:]]*smartify[[:space:]]*$' skills/smartify/SKILL.md

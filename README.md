@@ -9,7 +9,10 @@ through MCP plus a memory rule. It is memory-only — it does not route your mod
 
 ## Prerequisites
 
-- [Claude Code](https://code.claude.com) installed.
+- [Claude Code](https://code.claude.com) **v2.1.143 or newer**. The plugin uses `userConfig`
+  for guided, keychain-backed setup, which older CLIs reject as an invalid manifest (the
+  plugin silently fails to load). Run `claude --version`; update with `claude update` (or
+  reinstall) if you are behind.
 - A Smartify account with at least one Hivemind. Note its id (`hm_…`).
 - A Smartify SDK key scoped to that Hivemind (`sk_live_…` or `sk_test_…`), minted in the
   dashboard under Settings → API keys.
@@ -21,7 +24,10 @@ claude plugin marketplace add smartify-inc/smartify-claude
 claude plugin install smartify@smartify
 ```
 
-When you enable the plugin, Claude Code prompts for three values:
+Then open Claude Code and configure it through the interactive menu — run `/plugin`, select
+**Smartify**, and choose **Configure**. (A non-interactive `claude plugin install` enables the
+plugin but does not open the config dialog, so configure it here.) You will be prompted for
+three values:
 
 | Setting | Required | Description |
 | --- | --- | --- |
@@ -37,25 +43,30 @@ are stored in the repository or in `settings.json`.
 Test changes without publishing by pointing Claude Code at the plugin directory:
 
 ```bash
-claude --plugin-dir /path/to/smartify-claude/.claude-plugin
+claude --plugin-dir /path/to/smartify-claude
 ```
 
 ## What it contains
 
+Claude Code requires `plugin.json` inside `.claude-plugin/` and every other component
+(`.mcp.json`, `skills/`, `commands/`, `hooks/`) at the plugin root — not nested inside
+`.claude-plugin/`. The marketplace entry's `source` is `"./"` (the repo root is the plugin).
+
 ```
-.claude-plugin/
-├── plugin.json        # manifest + userConfig (hivemind_id, api_key, api_base)
-├── marketplace.json   # smartify-inc/smartify-claude catalog entry
-├── .mcp.json          # remote HTTP MCP server "smartify" → /v1/mcp/{hivemind_id}
-├── README.md          # plugin-focused install notes
+smartify-claude/                # plugin root
+├── .claude-plugin/
+│   ├── plugin.json             # manifest + userConfig (hivemind_id, api_key, api_base)
+│   ├── marketplace.json        # smartify-inc/smartify-claude catalog entry (source: "./")
+│   └── README.md               # plugin-focused install notes
+├── .mcp.json                   # remote HTTP MCP server "smartify" → /v1/mcp/{hivemind_id}
 ├── skills/
 │   └── smartify/
-│       └── SKILL.md   # memory protocol: search before answering, file after
+│       └── SKILL.md            # memory protocol: search before answering, file after
 ├── commands/
-│   ├── init.md        # /smartify:init — verify + onboard
-│   └── status.md      # /smartify:status — memory overview
+│   ├── init.md                 # /smartify:init — verify + onboard
+│   └── status.md               # /smartify:status — memory overview
 └── hooks/
-    ├── hooks.json     # registers SessionStart / Stop / PreCompact
+    ├── hooks.json              # registers SessionStart / Stop / PreCompact
     ├── smartify-session-start.sh
     ├── smartify-stop.sh
     └── smartify-precompact.sh

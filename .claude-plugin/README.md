@@ -5,6 +5,9 @@ bundles a remote MCP server (`smartify`), a memory-protocol skill, automatic-mem
 and slash commands so Claude searches your memory before answering and files each exchange
 afterward.
 
+Requires Claude Code **v2.1.143 or newer** — the plugin uses `userConfig` for guided,
+keychain-backed setup, which older CLIs reject (the plugin silently fails to load).
+
 ## Install
 
 ```bash
@@ -12,7 +15,8 @@ claude plugin marketplace add smartify-inc/smartify-claude
 claude plugin install smartify@smartify
 ```
 
-When you enable the plugin, Claude Code prompts for:
+Then configure it via the interactive menu: run `/plugin`, select **Smartify**, choose
+**Configure**. You will be prompted for:
 
 | Setting | Description |
 | --- | --- |
