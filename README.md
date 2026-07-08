@@ -19,9 +19,21 @@ through MCP plus a memory rule. It is memory-only — it does not route your mod
 
 ## Install
 
+The plugin fails to load on Claude Code older than v2.1.143, and Claude Code reports that
+only in its debug log — `claude plugin install` still says "success". So the snippet below
+checks your version first and refuses loudly instead of installing something that won't work:
+
 ```bash
-claude plugin marketplace add smartify-inc/smartify-claude
-claude plugin install smartify@smartify
+need=2.1.143
+have=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [ -z "$have" ]; then
+  echo "Claude Code not found — install it from https://code.claude.com, then re-run."
+elif [ "$(printf '%s\n%s\n' "$need" "$have" | sort -V | head -1)" != "$need" ]; then
+  echo "Smartify needs Claude Code >= $need (you have $have). Update with: claude update"
+else
+  claude plugin marketplace add smartify-inc/smartify-claude
+  claude plugin install smartify@smartify
+fi
 ```
 
 Then open Claude Code and configure it through the interactive menu — run `/plugin`, select
