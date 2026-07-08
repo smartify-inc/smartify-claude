@@ -9,22 +9,22 @@ through MCP plus a memory rule. It is memory-only — it does not route your mod
 
 ## Prerequisites
 
-- [Claude Code](https://code.claude.com) **v2.1.143 or newer**. The plugin uses `userConfig`
-  for guided, keychain-backed setup, which older CLIs reject as an invalid manifest (the
-  plugin silently fails to load). Run `claude --version`; update with `claude update` (or
-  reinstall) if you are behind.
+- [Claude Code](https://code.claude.com) **v2.1.147 or newer**. Older CLIs reject the
+  plugin's `userConfig` manifest as invalid (the plugin silently fails to load) or lack the
+  `--config` flag used for one-command setup. Run `claude --version`; update with
+  `claude update` (or reinstall) if you are behind.
 - A Smartify account with at least one Hivemind. Note its id (`hm_…`).
 - A Smartify SDK key scoped to that Hivemind (`sk_live_…` or `sk_test_…`), minted in the
   dashboard under Settings → API keys.
 
 ## Install
 
-The plugin fails to load on Claude Code older than v2.1.143, and Claude Code reports that
-only in its debug log — `claude plugin install` still says "success". So the snippet below
-checks your version first and refuses loudly instead of installing something that won't work:
+One command installs *and* configures the plugin. It checks your Claude Code version first
+and refuses loudly if you are behind (the plugin fails to load on old CLIs, and Claude Code
+reports that only in its debug log — `claude plugin install` still says "success"):
 
 ```bash
-need=2.1.143
+need=2.1.147
 have=$(claude --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 if [ -z "$have" ]; then
   echo "Claude Code not found — install it from https://code.claude.com, then re-run."
@@ -32,14 +32,16 @@ elif [ "$(printf '%s\n%s\n' "$need" "$have" | sort -V | head -1)" != "$need" ]; 
   echo "Smartify needs Claude Code >= $need (you have $have). Update with: claude update"
 else
   claude plugin marketplace add smartify-inc/smartify-claude
-  claude plugin install smartify@smartify
+  claude plugin install smartify@smartify \
+    --config hivemind_id=hm_xxxxxxxxxxxxxxxx \
+    --config api_key=sk_live_xxxxxxxxxxxxxxxx
 fi
 ```
 
-Then open Claude Code and configure it through the interactive menu — run `/plugin`, select
-**Smartify**, and choose **Configure**. (A non-interactive `claude plugin install` enables the
-plugin but does not open the config dialog, so configure it here.) You will be prompted for
-three values:
+`--config` values are validated against the plugin's schema and stored via the same path as
+the interactive configure flow — the API key goes to your OS keychain. Prefer to keep the
+key out of your shell history? Drop the `--config` lines and instead configure inside Claude
+Code: `/plugin` → **Smartify** → **Configure**. Either way, these are the values:
 
 | Setting | Required | Description |
 | --- | --- | --- |
